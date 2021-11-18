@@ -33,6 +33,7 @@ type kingpinParser struct {
 	method            string
 	body              string
 	bodyFilePath      string
+	proxy             string
 	stream            bool
 	certPath          string
 	keyPath           string
@@ -56,6 +57,7 @@ func newKingpinParser() argsParser {
 		method:       "GET",
 		body:         "",
 		bodyFilePath: "",
+		proxy:        "",
 		stream:       false,
 		certPath:     "",
 		keyPath:      "",
@@ -151,6 +153,10 @@ func newKingpinParser() argsParser {
 		}).
 		Bool()
 
+	app.Flag("proxy", "Use the specified HTTP proxy").
+		Default("").
+		StringVar(&kparser.proxy)
+
 	app.Flag(
 		"print", "Specifies what to output. Comma-separated list of values"+
 			" 'intro' (short: 'i'), 'progress' (short: 'p'),"+
@@ -222,6 +228,7 @@ func (k *kingpinParser) parse(args []string) (config, error) {
 		method:            k.method,
 		body:              k.body,
 		bodyFilePath:      k.bodyFilePath,
+		proxy:             k.proxy,
 		stream:            k.stream,
 		keyPath:           k.keyPath,
 		certPath:          k.certPath,

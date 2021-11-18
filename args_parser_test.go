@@ -407,6 +407,35 @@ func TestArgsParsing(t *testing.T) {
 			[][]string{
 				{
 					programName,
+					"--http2",
+					"--proxy", "http://proxyHost:proxyPort",
+					"https://somehost.somedomain",
+				},
+				{
+					programName,
+					"--http2",
+					"--proxy=http://proxyHost:proxyPort",
+					"https://somehost.somedomain",
+				},
+			},
+			config{
+				numConns:      defaultNumberOfConns,
+				timeout:       defaultTimeout,
+				headers:       new(headersList),
+				method:        "GET",
+				url:           "https://somehost.somedomain:443",
+				clientType:    nhttp2,
+				printIntro:    true,
+				printProgress: true,
+				printResult:   true,
+				format:        knownFormat("plain-text"),
+				proxy:         "http://proxyHost:proxyPort",
+			},
+		},
+		{
+			[][]string{
+				{
+					programName,
 					"--body-file=testbody.txt",
 					"https://somehost.somedomain",
 				},
