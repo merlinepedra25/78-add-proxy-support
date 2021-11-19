@@ -757,3 +757,56 @@ func testBombardierShouldSendCustomHostHeader(
 	b.disableOutput()
 	b.bombard()
 }
+
+func TestBombardierUsesProxy(t *testing.T) {
+	testAllClients(t, testBombardierUsesProxy)
+}
+
+func testBombardierUsesProxy(
+	clientType clientTyp, t *testing.T,
+) {
+	reqsReceivedS := uint64(0)
+	reqsReceivedP := uint64(0)
+	reqsReceivedSbyP := uint64(0)
+	s := httptest.NewServer(
+		http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			atomic.AddUint64(&reqsReceivedS, 1)
+		}),
+	)
+	defer s.Close()
+	p := httptest.NewServer(
+    	http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+    		atomic.AddUint64(&reqsReceivedP, 1)
+    		atomic.AddUint64(&reqsReceivedSbyP, 1)
+    	}),
+    )
+    defer p.Close()
+	numReqs := uint64(1)
+	noHeaders := new(headersList)
+	b, e := newBombardier(config{
+		numConns:   defaultNumberOfConns,
+		numReqs:    &numReqs,
+		url:        s.URL,
+		proxy:      p.URL,
+		headers:    noHeaders,
+		timeout:    defaultTimeout,
+		method:     "GET",
+		body:       "",
+		clientType: clientType,
+		format:     knownFormat("plain-text"),
+	})
+	if e != nil {
+		t.Error(e)
+	}
+	b.disableOutput()
+	b.bombard()
+	if reqsReceivedP != uint64(1) {
+		t.Fail()
+	}
+	if reqsReceivedS != uint64(0) {
+    	t.Fail()
+    }
+    if reqsReceivedSbyP != uint64(1) {
+        t.Fail()
+    }
+}
