@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpproxy"
 	"golang.org/x/net/http2"
 )
 
@@ -55,6 +56,19 @@ func newFastHTTPClient(opts *clientOpts) client {
 	}
 	c.host = u.Host
 	c.requestURI = u.RequestURI()
+
+	var dial fasthttp.DialFunc
+
+	if opts.proxy != "" {
+	   url_proxy := strings.Replace(opts.proxy, "https://", "", 1)
+	   url_proxy = strings.Replace(url_proxy, "http://", "", 1)
+       dial = fasthttpproxy.FasthttpHTTPDialer(url_proxy)
+	} else {
+       dial = fasthttpDialFunc(
+          opts.bytesRead, opts.bytesWritten,
+       )
+	}
+
 	c.client = &fasthttp.HostClient{
 		Addr:                          u.Host,
 		IsTLS:                         u.Scheme == "https",
@@ -63,9 +77,7 @@ func newFastHTTPClient(opts *clientOpts) client {
 		WriteTimeout:                  opts.timeout,
 		DisableHeaderNamesNormalizing: true,
 		TLSConfig:                     opts.tlsConfig,
-		Dial: fasthttpDialFunc(
-			opts.bytesRead, opts.bytesWritten,
-		),
+		Dial: dial,
 	}
 	c.headers = headersToFastHTTPHeaders(opts.headers)
 	c.method, c.body = opts.method, opts.body
